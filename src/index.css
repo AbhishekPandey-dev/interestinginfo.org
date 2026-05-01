@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -57,20 +57,14 @@
     @apply border-border;
   }
 
-  html,
-  body {
-    font-family:
-      "Inter",
-      system-ui,
-      -apple-system,
-      sans-serif;
+  html, body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background-color: white;
     color: #111111;
     @apply antialiased;
   }
 
-  button,
-  a {
+  button, a {
     transition: all 150ms ease;
   }
 }
@@ -81,50 +75,17 @@
     font-size: 18px;
     line-height: 1.7;
   }
-  .doc-prose h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 1.6em 0 0.6em;
-    line-height: 1.25;
-  }
-  .doc-prose h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 1.4em 0 0.5em;
-    line-height: 1.3;
-  }
-  .doc-prose h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 1.2em 0 0.4em;
-  }
-  .doc-prose p {
-    margin: 0.9em 0;
-  }
-  .doc-prose ul,
-  .doc-prose ol {
-    margin: 0.9em 0;
-    padding-left: 1.5em;
-  }
-  .doc-prose ul {
-    list-style: disc;
-  }
-  .doc-prose ol {
-    list-style: decimal;
-  }
-  .doc-prose li {
-    margin: 0.3em 0;
-  }
-  .doc-prose a {
-    color: hsl(var(--primary));
-    text-decoration: underline;
-  }
-  .doc-prose strong {
-    font-weight: 600;
-  }
-  .doc-prose em {
-    font-style: italic;
-  }
+  .doc-prose h1 { font-size: 2rem; font-weight: 700; margin: 1.6em 0 0.6em; line-height: 1.25; }
+  .doc-prose h2 { font-size: 1.5rem; font-weight: 600; margin: 1.4em 0 0.5em; line-height: 1.3; }
+  .doc-prose h3 { font-size: 1.25rem; font-weight: 600; margin: 1.2em 0 0.4em; }
+  .doc-prose p  { margin: 0.9em 0; }
+  .doc-prose ul, .doc-prose ol { margin: 0.9em 0; padding-left: 1.5em; }
+  .doc-prose ul { list-style: disc; }
+  .doc-prose ol { list-style: decimal; }
+  .doc-prose li { margin: 0.3em 0; }
+  .doc-prose a { color: hsl(var(--primary)); text-decoration: underline; }
+  .doc-prose strong { font-weight: 600; }
+  .doc-prose em { font-style: italic; }
   .doc-prose blockquote {
     border-left: 3px solid hsl(var(--border));
     padding-left: 1em;
@@ -136,32 +97,25 @@
     border-collapse: collapse;
     margin: 1em 0;
   }
-  .doc-prose th,
-  .doc-prose td {
+  .doc-prose th, .doc-prose td {
     border: 1px solid hsl(var(--border));
     padding: 0.5em 0.75em;
     text-align: left;
   }
-  .doc-prose img {
-    max-width: 100%;
-    height: auto;
-  }
+  .doc-prose img { max-width: 100%; height: auto; }
 }
 
 @layer components {
   /* Base container — no fixed widths, zoom is handled purely in JS */
   .docx-container {
-    overflow: visible !important;
-    width: 100% !important;
+    width: 100%;
     max-width: 100%;
     margin: 0;
     padding: 0;
   }
 
   .docx-container .docx-render,
-  .docx-container .docx-wrapper,
   .docx-container > * {
-    overflow: visible !important;
     width: 100% !important;
     min-width: 0 !important;
     /* NO max-width constraint: must fill the logicalWidth set by JS */
@@ -171,13 +125,12 @@
     border: none !important;
     padding: 40px clamp(14px, 5vw, 80px) !important;
     margin: 0 !important;
+    overflow-x: hidden !important;
     color-scheme: light !important;
   }
 
   /* section.docx must fill 100% of the JS-controlled logicalWidth container */
   .docx-container section.docx {
-    overflow-x: hidden !important;
-    overflow-y: visible !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -208,88 +161,14 @@
     overflow-x: auto !important;
     white-space: normal !important;
   }
-
-  /* Hide Word document headers and footers from displaying on the webpage */
-  .docx-container section.docx header,
-  .docx-container section.docx footer,
-  .docx-container .docx-header,
-  .docx-container .docx-footer,
-  .docx-container [class*="header"],
-  .docx-container [class*="footer"] {
-    display: none !important;
-  }
-
-  /* The zoom wrapper div in Index.tsx — make sure it does not create scroll */
-  .zoom-wrapper {
-    overflow: visible !important;
-  }
-
-  /* Hide scrollbar on all docx containers — all browsers */
-  .docx-container,
-  .docx-container *,
-  .docx-container section.docx,
-  .docx-render-wrapper,
-  .docx-wrapper {
-    scrollbar-width: none !important; /* Firefox */
-    -ms-overflow-style: none !important; /* IE and Edge */
-    overflow: visible !important; /* Prevent inner scrollbars */
-    box-shadow: none !important; /* Remove blue/gray glow/vignette */
-    outline: none !important; /* Remove any focus or library outlines */
-    background: transparent !important;
-  }
-
-  .docx-container::-webkit-scrollbar,
-  .docx-container *::-webkit-scrollbar,
-  .docx-render-wrapper::-webkit-scrollbar,
-  .docx-wrapper::-webkit-scrollbar {
-    display: none !important; /* Chrome, Safari, Opera */
-    width: 0 !important;
-    height: 0 !important;
-  }
-
-  /* Aggressively override the docx-preview wrapper that causes the glow and padding issues */
-  .docx-render-wrapper, 
-  .docx-wrapper {
-    background: white !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: block !important;
-    min-height: auto !important;
-    width: 100% !important;
-  }
-
-  /* Ensure the actual document section has the requested padding and no glow */
-  .docx-container section.docx {
-    padding: 40px clamp(14px, 5vw, 80px) !important;
-    margin: 0 auto !important;
-    box-shadow: none !important;
-    border: none !important;
-    background: white !important;
-  }
-
-  /* Universal shadow/outline killer for all sub-elements to catch any leftover library themes */
-  .docx-container *,
-  .docx-render-wrapper *,
-  .docx-wrapper * {
-    box-shadow: none !important;
-    outline: none !important;
-  }
 }
 
 @layer utilities {
   @keyframes pulseBar {
-    0%,
-    100% {
-      height: 30%;
-    }
-    50% {
-      height: 100%;
-    }
+    0%, 100% { height: 30%; }
+    50% { height: 100%; }
   }
-  .animate-pulse-bar-3 {
-    animation: pulseBar 0.9s ease-in-out 0.3s infinite;
-    height: 100%;
-  }
+  .animate-pulse-bar-3 { animation: pulseBar 0.9s ease-in-out 0.3s infinite; height: 100%; }
 }
 
 /* === RESPONSIVE DOCUMENT VIEWER === */
@@ -325,14 +204,13 @@
 /* Small phone */
 @media (max-width: 479px) {
   .docx-container section.docx {
-    padding: 24px 14px !important;
+    padding: 16px 14px !important;
     font-size: 15px !important;
   }
 }
 
 /* Prevent ALL overflow on any screen */
-html,
-body {
+html, body {
   overflow-x: hidden !important;
   max-width: 100vw !important;
 }
