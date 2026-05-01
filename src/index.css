@@ -1,0 +1,209 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 98%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 9%;
+
+    --radius: 0.5rem;
+
+    --admin-bg: 0 0% 98%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: white;
+    color: #111111;
+    @apply antialiased;
+  }
+
+  button, a {
+    transition: all 150ms ease;
+  }
+}
+
+@layer components {
+  .doc-prose {
+    @apply text-foreground;
+    font-size: 18px;
+    line-height: 1.7;
+  }
+  .doc-prose h1 { font-size: 2rem; font-weight: 700; margin: 1.6em 0 0.6em; line-height: 1.25; }
+  .doc-prose h2 { font-size: 1.5rem; font-weight: 600; margin: 1.4em 0 0.5em; line-height: 1.3; }
+  .doc-prose h3 { font-size: 1.25rem; font-weight: 600; margin: 1.2em 0 0.4em; }
+  .doc-prose p  { margin: 0.9em 0; }
+  .doc-prose ul, .doc-prose ol { margin: 0.9em 0; padding-left: 1.5em; }
+  .doc-prose ul { list-style: disc; }
+  .doc-prose ol { list-style: decimal; }
+  .doc-prose li { margin: 0.3em 0; }
+  .doc-prose a { color: hsl(var(--primary)); text-decoration: underline; }
+  .doc-prose strong { font-weight: 600; }
+  .doc-prose em { font-style: italic; }
+  .doc-prose blockquote {
+    border-left: 3px solid hsl(var(--border));
+    padding-left: 1em;
+    margin: 1em 0;
+    color: hsl(var(--muted-foreground));
+  }
+  .doc-prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+  }
+  .doc-prose th, .doc-prose td {
+    border: 1px solid hsl(var(--border));
+    padding: 0.5em 0.75em;
+    text-align: left;
+  }
+  .doc-prose img { max-width: 100%; height: auto; }
+}
+
+@layer components {
+  /* Base container — no fixed widths, zoom is handled purely in JS */
+  .docx-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .docx-container .docx-render,
+  .docx-container > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    /* NO max-width constraint: must fill the logicalWidth set by JS */
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 40px clamp(14px, 5vw, 80px) !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
+    color-scheme: light !important;
+  }
+
+  /* section.docx must fill 100% of the JS-controlled logicalWidth container */
+  .docx-container section.docx {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Images never overflow their container */
+  .docx-container section.docx img,
+  .docx-container section.docx svg,
+  .docx-container section.docx canvas {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  /* Tables: horizontally scrollable on small screens */
+  .docx-container section.docx table {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+    overflow-x: auto !important;
+    white-space: normal !important;
+  }
+}
+
+@layer utilities {
+  @keyframes pulseBar {
+    0%, 100% { height: 30%; }
+    50% { height: 100%; }
+  }
+  .animate-pulse-bar-3 { animation: pulseBar 0.9s ease-in-out 0.3s infinite; height: 100%; }
+}
+
+/* === RESPONSIVE DOCUMENT VIEWER === */
+
+/* Large desktop — generous side padding */
+@media (min-width: 1440px) {
+  .docx-container section.docx {
+    padding: 60px 120px !important;
+  }
+}
+
+/* Standard desktop */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .docx-container section.docx {
+    padding: 48px 80px !important;
+  }
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .docx-container section.docx {
+    padding: 36px 48px !important;
+  }
+}
+
+/* Large phone */
+@media (min-width: 480px) and (max-width: 767px) {
+  .docx-container section.docx {
+    padding: 24px 24px !important;
+  }
+}
+
+/* Small phone */
+@media (max-width: 479px) {
+  .docx-container section.docx {
+    padding: 16px 14px !important;
+    font-size: 15px !important;
+  }
+}
+
+/* Prevent ALL overflow on any screen */
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
