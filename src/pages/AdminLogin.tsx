@@ -31,7 +31,7 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-[100dvh] bg-[hsl(var(--admin-bg))] flex items-center justify-center px-4">
-      <div className="w-[90%] mx-auto max-w-[400px] bg-card border border-border rounded-2xl p-7 max-[359px]:p-4 shadow-sm">
+      <div className="w-[90%] mx-auto max-w-[400px] bg-card border border-border rounded-2xl shadow-sm" style={{ padding: 'clamp(16px, 4vw, 32px)' }}>
         <h1 className="text-xl font-semibold mb-1">Sign in</h1>
         <p className="text-sm text-muted-foreground mb-6">Admin access only.</p>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -46,7 +46,7 @@ export default function AdminLogin() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full h-10 px-3 rounded-lg bg-background border border-input focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="mt-1 w-full h-10 px-3 text-[16px] rounded-lg bg-background border border-input focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
           <div>
@@ -60,7 +60,7 @@ export default function AdminLogin() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full h-10 px-3 rounded-lg bg-background border border-input focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="mt-1 w-full h-10 px-3 text-[16px] rounded-lg bg-background border border-input focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
           {error && (

@@ -274,3 +274,166 @@ section.docx *::-webkit-scrollbar {
   width: 0 !important;
   height: 0 !important;
 }
+
+/* === ADMIN RESPONSIVE === */
+
+@media (max-width: 479px) {
+  .admin-action-buttons button {
+    width: 100% !important;
+    min-width: unset !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .preview-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    border-radius: 0 !important;
+    overflow-y: auto !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .status-card {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+}
+
+/* === GLOBAL RESPONSIVE === */
+
+* {
+  box-sizing: border-box !important;
+}
+
+/* === DOCUMENT RESPONSIVE PADDING === */
+
+@media (min-width: 1440px) {
+  .docx-container section.docx {
+    padding: 60px 120px 60px 120px !important;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .docx-container section.docx {
+    padding: 48px 80px 48px 80px !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .docx-container section.docx {
+    padding: 36px 48px 36px 48px !important;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  .docx-container section.docx {
+    padding: 24px 24px 24px 24px !important;
+  }
+}
+
+@media (max-width: 479px) {
+  .docx-container section.docx {
+    padding: 16px 14px 16px 14px !important;
+  }
+}
+
+/* === TABLES RESPONSIVE === */
+
+.docx-container section.docx table {
+  display: block !important;
+  width: 100% !important;
+  overflow-x: auto !important;
+  scrollbar-width: thin !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+@media (max-width: 767px) {
+  .docx-container section.docx table {
+    font-size: 13px !important;
+  }
+}
+
+/* === IMAGES RESPONSIVE === */
+
+.docx-container section.docx img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
+}
+
+/* === ZOOM CONTROL RESPONSIVE === */
+
+@media (max-width: 767px) {
+  .zoom-control {
+    bottom: 80px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .zoom-control button {
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+}
+
+@media (max-width: 379px) {
+  .zoom-control .zoom-label {
+    display: none !important;
+  }
+}
+
+/* === READING MODE TOGGLE RESPONSIVE === */
+
+@media (max-width: 767px) {
+  .reading-mode-toggle {
+    top: 12px !important;
+    right: 12px !important;
+    width: 36px !important;
+    height: 36px !important;
+  }
+}
+
+/* === AI CHAT BUBBLE RESPONSIVE === */
+
+@media (max-width: 767px) {
+  .chat-bubble-button {
+    bottom: 16px !important;
+    right: 16px !important;
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .chat-panel {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    bottom: 0 !important;
+    right: 0 !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .chat-panel {
+    width: 360px !important;
+    height: 480px !important;
+    bottom: 24px !important;
+    right: 24px !important;
+    border-radius: 16px !important;
+  }
+}
+
+/* === SELECTION TOOLTIP RESPONSIVE === */
+
+@media (max-width: 767px) {
+  .selection-tooltip {
+    font-size: 13px !important;
+    padding: 8px 16px !important;
+    min-height: 44px !important;
+    min-width: 130px !important;
+  }
+}

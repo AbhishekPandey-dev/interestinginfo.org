@@ -213,7 +213,8 @@ function ZoomedDocView({ zoom, fileUrl, onReady }: { zoom: number; fileUrl: stri
     return () => observer.disconnect();
   }, [fileUrl]);
 
-  const logicalWidth = viewportWidth / zoom;
+  const effectiveZoom = viewportWidth < 768 ? Math.max(1.0, zoom) : zoom;
+  const logicalWidth = viewportWidth / effectiveZoom;
 
   return (
     <div
@@ -292,7 +293,7 @@ export default function Index() {
         minHeight: '100vh',
         overflowX: 'hidden',
         overflowY: 'visible',
-        paddingTop: '32px',
+        paddingTop: 'clamp(16px, 3vw, 32px)',
         paddingBottom: '80px'
       }}
     >
@@ -303,8 +304,8 @@ export default function Index() {
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : !doc ? (
-        <div className="min-h-[100dvh] flex items-center justify-center">
-          <p className="text-muted-foreground text-base">Nothing here yet.</p>
+        <div className="min-h-[100dvh] flex items-center justify-center" style={{ padding: '24px' }}>
+          <p className="text-muted-foreground" style={{ fontSize: 'clamp(14px, 2vw, 18px)' }}>Nothing here yet.</p>
         </div>
       ) : (
         <>

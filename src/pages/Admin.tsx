@@ -247,6 +247,7 @@ export default function Admin() {
             className={`block bg-card border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors ${
               dragOver ? 'border-primary bg-accent' : 'border-border hover:bg-accent'
             }`}
+            style={{ width: '100%', minHeight: 'clamp(120px, 20vw, 200px)' }}
           >
             <input
               ref={fileInputRef}
@@ -285,9 +286,10 @@ export default function Admin() {
               <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
                 Actions
               </h2>
-              <div className="flex flex-wrap gap-2">
+              <div className="admin-action-buttons flex flex-wrap gap-2">
                 <button
                   disabled={busy}
+                  style={{ flex: '1 1 auto' }}
                   onClick={togglePublish}
                   className={`inline-flex items-center justify-center sm:justify-start gap-2 h-10 px-4 rounded-lg text-sm font-medium text-primary-foreground min-w-[120px] disabled:opacity-60 ${
                     doc.is_published
@@ -307,18 +309,21 @@ export default function Admin() {
                 </button>
                 <button
                   onClick={() => setPreviewOpen(true)}
+                  style={{ flex: '1 1 auto' }}
                   className="inline-flex items-center justify-center sm:justify-start gap-2 h-10 px-4 rounded-lg text-sm font-medium bg-card border border-border hover:bg-accent min-w-[120px]"
                 >
                   <Eye className="h-4 w-4" /> Preview
                 </button>
                 <button
                   onClick={openEdit}
+                  style={{ flex: '1 1 auto' }}
                   className="inline-flex items-center justify-center sm:justify-start gap-2 h-10 px-4 rounded-lg text-sm font-medium bg-card border border-border hover:bg-accent min-w-[120px]"
                 >
                   <Pencil className="h-4 w-4" /> Edit
                 </button>
                 <button
                   onClick={downloadOriginal}
+                  style={{ flex: '1 1 auto' }}
                   className="inline-flex items-center justify-center sm:justify-start gap-2 h-10 px-4 rounded-lg text-sm font-medium bg-card border border-border hover:bg-accent min-w-[120px]"
                 >
                   <Download className="h-4 w-4" /> Download
@@ -331,7 +336,7 @@ export default function Admin() {
                 Status
               </h2>
               <div className="bg-card border border-border rounded-2xl p-5">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="status-card flex items-start justify-between gap-4 flex-wrap">
                   <div>
                     <div className="font-medium text-sm break-all">{doc.file_name}</div>
                     <div className="text-xs text-muted-foreground mt-1">
@@ -381,7 +386,7 @@ export default function Admin() {
               ref={editorRef}
               contentEditable
               suppressContentEditableWarning
-              className="doc-prose mx-auto max-w-[780px] min-h-[300px] max-h-[50vh] overflow-y-auto outline-none focus:ring-2 focus:ring-ring rounded-lg p-4 bg-background border border-border"
+              className="doc-prose w-full mx-auto max-w-[780px] min-h-[300px] max-h-[50vh] overflow-y-auto outline-none focus:ring-2 focus:ring-ring rounded-lg p-4 bg-background border border-border"
               dangerouslySetInnerHTML={{ __html: editHtml }}
             />
             <div className="mx-auto max-w-[780px] mt-4 flex justify-end gap-2">
@@ -431,7 +436,7 @@ function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4 bg-black/50 overflow-hidden">
-      <div className="bg-card text-card-foreground sm:border border-border rounded-none sm:rounded-2xl w-full h-full sm:h-auto max-w-3xl max-h-[100dvh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-xl">
+      <div className="preview-modal bg-card text-card-foreground sm:border border-border rounded-none sm:rounded-2xl w-full h-full sm:h-auto max-w-3xl max-h-[100dvh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-xl">
         <div className="flex items-center justify-between px-5 py-3 border-b border-border flex-shrink-0">
           <h3 className="text-sm font-semibold">{title}</h3>
           <button

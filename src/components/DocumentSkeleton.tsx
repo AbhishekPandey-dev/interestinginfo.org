@@ -1,9 +1,9 @@
 export function DocumentSkeleton() {
   return (
-    <div style={{ 
-      padding: '40px clamp(16px, 5vw, 80px)',
-      maxWidth: '100%',
-      animation: 'pulse 1.5s ease-in-out infinite'
+    <div style={{
+      padding: 'clamp(16px, 5vw, 80px)',
+      width: '100%',
+      boxSizing: 'border-box',
     }}>
       {/* Title line */}
       <div style={{ 
