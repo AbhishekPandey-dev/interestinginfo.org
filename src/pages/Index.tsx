@@ -1,25 +1,31 @@
-import { useEffect, useState, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { Volume2, Play, Pause, Square, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { ReadingModeToggle } from '@/components/ReadingModeToggle';
-import { Assistant, selectBestVoice } from '@/components/Assistant';
-import { DocxView } from '@/components/DocxView';
-import { ZoomControl } from '@/components/ZoomControl';
+import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
+import { Volume2, Play, Pause, Square, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { ReadingModeToggle } from "@/components/ReadingModeToggle";
+import { Assistant, selectBestVoice } from "@/components/Assistant";
+import { DocxView } from "@/components/DocxView";
+import { ZoomControl } from "@/components/ZoomControl";
 
 function SelectionTooltip() {
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
-  const [speechState, setSpeechState] = useState<'idle' | 'playing' | 'paused'>('idle');
+  const [tooltip, setTooltip] = useState<{
+    x: number;
+    y: number;
+    text: string;
+  } | null>(null);
+  const [speechState, setSpeechState] = useState<"idle" | "playing" | "paused">(
+    "idle",
+  );
   const speechStateRef = useRef(speechState);
   speechStateRef.current = speechState;
 
   useEffect(() => {
     const handleMouseUp = () => {
-      if (speechStateRef.current !== 'idle') return;
+      if (speechStateRef.current !== "idle") return;
 
       // Minor delay to let selection settle
       setTimeout(() => {
-        const selectedText = window.getSelection()?.toString().trim() || '';
+        const selectedText = window.getSelection()?.toString().trim() || "";
         if (selectedText.length > 3) {
           const range = window.getSelection()?.getRangeAt(0);
           if (range) {
@@ -27,7 +33,7 @@ function SelectionTooltip() {
             setTooltip({
               x: rect.left + rect.width / 2,
               y: rect.top + window.scrollY - 48,
-              text: selectedText
+              text: selectedText,
             });
           }
         } else {
@@ -37,20 +43,21 @@ function SelectionTooltip() {
     };
 
     const handleScroll = () => {
-      if (speechStateRef.current === 'idle') setTooltip(null);
+      if (speechStateRef.current === "idle") setTooltip(null);
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && speechStateRef.current === 'idle') setTooltip(null);
+      if (e.key === "Escape" && speechStateRef.current === "idle")
+        setTooltip(null);
     };
 
-    document.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('scroll', handleScroll);
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("scroll", handleScroll);
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('scroll', handleScroll);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
@@ -59,27 +66,27 @@ function SelectionTooltip() {
   const handleReadAloud = (e: React.MouseEvent) => {
     e.stopPropagation();
     window.speechSynthesis.cancel();
-    
+
     // Attempt to wake up voices if they haven't loaded yet
     const voices = window.speechSynthesis.getVoices();
     const voice = selectBestVoice(voices);
-    
+
     const u = new SpeechSynthesisUtterance(tooltip.text);
     if (voice) u.voice = voice;
-    u.lang = voice?.lang || 'en-US';
+    u.lang = voice?.lang || "en-US";
     u.rate = 0.88;
     u.pitch = 0.92;
     u.volume = 1.0;
-    
-    u.onstart = () => setSpeechState('playing');
-    u.onpause = () => setSpeechState('paused');
-    u.onresume = () => setSpeechState('playing');
+
+    u.onstart = () => setSpeechState("playing");
+    u.onpause = () => setSpeechState("paused");
+    u.onresume = () => setSpeechState("playing");
     u.onend = () => {
-      setSpeechState('idle');
+      setSpeechState("idle");
       setTooltip(null);
     };
     u.onerror = () => {
-      setSpeechState('idle');
+      setSpeechState("idle");
       setTooltip(null);
     };
 
@@ -88,19 +95,19 @@ function SelectionTooltip() {
 
   const handlePausePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (speechState === 'playing') {
+    if (speechState === "playing") {
       window.speechSynthesis.pause();
-      setSpeechState('paused'); // fallback if event is sluggish
-    } else if (speechState === 'paused') {
+      setSpeechState("paused"); // fallback if event is sluggish
+    } else if (speechState === "paused") {
       window.speechSynthesis.resume();
-      setSpeechState('playing'); // fallback
+      setSpeechState("playing"); // fallback
     }
   };
 
   const handleStop = (e: React.MouseEvent) => {
     e.stopPropagation();
     window.speechSynthesis.cancel();
-    setSpeechState('idle');
+    setSpeechState("idle");
     setTooltip(null);
   };
 
@@ -108,36 +115,36 @@ function SelectionTooltip() {
     <div
       className="selection-tooltip-container"
       style={{
-        position: 'absolute',
+        position: "absolute",
         top: tooltip.y,
         left: tooltip.x,
-        transform: 'translateX(-50%)',
-        background: '#1a1a1a',
-        color: 'white',
-        borderRadius: '999px',
-        padding: '6px 8px',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
+        transform: "translateX(-50%)",
+        background: "#1a1a1a",
+        color: "white",
+        borderRadius: "999px",
+        padding: "6px 8px",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
         zIndex: 9999,
-        animation: 'fade-in 120ms ease',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px'
+        animation: "fade-in 120ms ease",
+        display: "flex",
+        alignItems: "center",
+        gap: "4px",
       }}
     >
-      {speechState === 'idle' ? (
+      {speechState === "idle" ? (
         <button
           onClick={handleReadAloud}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'transparent',
-            color: 'white',
-            border: 'none',
-            padding: '2px 8px',
-            fontSize: '13px',
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            background: "transparent",
+            color: "white",
+            border: "none",
+            padding: "2px 8px",
+            fontSize: "13px",
             fontWeight: 500,
-            cursor: 'pointer'
+            cursor: "pointer",
           }}
         >
           <Volume2 className="h-4 w-4" /> Read aloud
@@ -147,30 +154,34 @@ function SelectionTooltip() {
           <button
             onClick={handlePausePlay}
             style={{
-              background: 'transparent',
-              color: 'white',
-              border: 'none',
-              padding: '4px 6px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              borderRadius: '999px'
+              background: "transparent",
+              color: "white",
+              border: "none",
+              padding: "4px 6px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              borderRadius: "999px",
             }}
-            title={speechState === 'playing' ? "Pause" : "Play"}
+            title={speechState === "playing" ? "Pause" : "Play"}
           >
-            {speechState === 'playing' ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            {speechState === "playing" ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
           </button>
           <button
             onClick={handleStop}
             style={{
-              background: 'transparent',
-              color: 'white',
-              border: 'none',
-              padding: '4px 6px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              borderRadius: '999px'
+              background: "transparent",
+              color: "white",
+              border: "none",
+              padding: "4px 6px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              borderRadius: "999px",
             }}
             title="Stop"
           >
@@ -179,7 +190,7 @@ function SelectionTooltip() {
         </>
       )}
     </div>,
-    document.body
+    document.body,
   );
 }
 
@@ -197,8 +208,8 @@ function ZoomedDocView({ zoom, fileUrl }: { zoom: number; fileUrl: string }) {
 
   useEffect(() => {
     const handler = () => setViewportWidth(window.innerWidth);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
   }, []);
 
   useEffect(() => {
@@ -215,11 +226,13 @@ function ZoomedDocView({ zoom, fileUrl }: { zoom: number; fileUrl: string }) {
 
   return (
     <div
+      className="zoom-wrapper"
       style={{
-        width: '100%',
-        overflowX: 'hidden',
-        position: 'relative',
-        height: docHeight > 0 ? docHeight * zoom : 'auto',
+        width: "100%",
+        overflowX: "hidden",
+        overflowY: "visible",
+        position: "relative",
+        height: docHeight > 0 ? docHeight * zoom : "auto",
       }}
     >
       <div
@@ -227,9 +240,9 @@ function ZoomedDocView({ zoom, fileUrl }: { zoom: number; fileUrl: string }) {
         style={{
           width: logicalWidth,
           transform: `scale(${zoom})`,
-          transformOrigin: 'top left',
-          transition: 'transform 0.15s ease, width 0.15s ease',
-          position: 'absolute',
+          transformOrigin: "top left",
+          transition: "transform 0.15s ease, width 0.15s ease",
+          position: "absolute",
           top: 0,
           left: 0,
         }}
@@ -244,21 +257,21 @@ export default function Index() {
   const [doc, setDoc] = useState<DocRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [zoom, setZoom] = useState(() => {
-    const saved = localStorage.getItem('doc-zoom');
+    const saved = localStorage.getItem("doc-zoom");
     return saved ? parseFloat(saved) : 1.0;
   });
 
   useEffect(() => {
-    localStorage.setItem('doc-zoom', zoom.toString());
+    localStorage.setItem("doc-zoom", zoom.toString());
   }, [zoom]);
 
   useEffect(() => {
     let active = true;
     (async () => {
       const { data } = await supabase
-        .from('published_document')
-        .select('html_content, is_published, file_name, file_url')
-        .eq('is_published', true)
+        .from("published_document")
+        .select("html_content, is_published, file_name, file_url")
+        .eq("is_published", true)
         .maybeSingle();
       if (!active) return;
       setDoc(data ?? null);
