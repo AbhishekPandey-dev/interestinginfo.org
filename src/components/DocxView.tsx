@@ -95,7 +95,15 @@ export function DocxView({ fileUrl, className, onReady }: DocxViewProps) {
       {error && !loading && (
         <div className="text-sm text-destructive py-8 text-center">{error}</div>
       )}
-      <div ref={containerRef} className="docx-container" />
+      <div 
+        ref={containerRef} 
+        className="docx-container" 
+        style={{ 
+          colorScheme: 'light',
+          overflow: 'visible',
+          width: '100%'
+        }} 
+      />
     </div>
   );
 }

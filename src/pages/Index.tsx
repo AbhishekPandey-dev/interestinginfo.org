@@ -219,9 +219,9 @@ function ZoomedDocView({ zoom, fileUrl, onReady }: { zoom: number; fileUrl: stri
     <div
       style={{
         width: '100%',
-        overflowX: 'hidden',
+        height: docHeight * zoom,
         position: 'relative',
-        height: docHeight > 0 ? docHeight * zoom : 'auto',
+        overflow: 'visible',
       }}
     >
       <div
@@ -230,10 +230,8 @@ function ZoomedDocView({ zoom, fileUrl, onReady }: { zoom: number; fileUrl: stri
           width: logicalWidth,
           transform: `scale(${zoom})`,
           transformOrigin: 'top left',
-          transition: 'transform 0.15s ease, width 0.15s ease',
           position: 'absolute',
-          top: 0,
-          left: 0,
+          overflow: 'visible',
         }}
       >
         <DocxView fileUrl={fileUrl} onReady={onReady} />
@@ -288,7 +286,16 @@ export default function Index() {
   }, []);
 
   return (
-    <div className="min-h-screen w-full bg-background overflow-x-hidden relative">
+    <div 
+      style={{ 
+        width: '100%',
+        minHeight: '100vh',
+        overflowX: 'hidden',
+        overflowY: 'visible',
+        paddingTop: '32px',
+        paddingBottom: '80px'
+      }}
+    >
       <ReadingModeToggle />
 
       {loading ? (

@@ -223,3 +223,54 @@ html, body {
   overflow-x: hidden !important;
   max-width: 100vw !important;
 }
+
+/* ========================================
+   SCROLLBAR FIX — DO NOT REMOVE
+   Only browser native scroll allowed
+   ======================================== */
+
+/* Hide scrollbar on html and body but keep scrolling working */
+html {
+  overflow-x: hidden !important;
+  overflow-y: scroll !important;
+  scrollbar-width: none !important;
+}
+
+html::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+}
+
+body {
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  scrollbar-width: none !important;
+}
+
+body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+}
+
+/* Hide scrollbar on every single docx related element */
+.docx-container,
+.docx-container *,
+.docx-wrapper,
+.docx-wrapper *,
+section.docx,
+section.docx * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  overflow-x: hidden !important;
+}
+
+.docx-container::-webkit-scrollbar,
+.docx-container *::-webkit-scrollbar,
+.docx-wrapper::-webkit-scrollbar,
+.docx-wrapper *::-webkit-scrollbar,
+section.docx::-webkit-scrollbar,
+section.docx *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
