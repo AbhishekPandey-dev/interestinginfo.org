@@ -398,42 +398,235 @@ section.docx *::-webkit-scrollbar {
 
 /* === AI CHAT BUBBLE RESPONSIVE === */
 
-@media (max-width: 767px) {
-  .chat-bubble-button {
-    bottom: 16px !important;
-    right: 16px !important;
-    width: 48px !important;
-    height: 48px !important;
-  }
-
-  .chat-panel {
-    position: fixed !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    border-radius: 0 !important;
-    bottom: 0 !important;
-    right: 0 !important;
-  }
+/* Floating bubble button */
+.chat-bubble-button {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.20);
 }
 
 @media (min-width: 768px) {
-  .chat-panel {
-    width: 360px !important;
-    height: 480px !important;
+  .chat-bubble-button {
+    position: fixed !important;
     bottom: 24px !important;
     right: 24px !important;
-    border-radius: 16px !important;
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 50% !important;
+    z-index: 9995 !important;
   }
 }
 
-/* === SELECTION TOOLTIP RESPONSIVE === */
+@media (max-width: 767px) {
+  .chat-bubble-button {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 16px !important;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    z-index: 9995 !important;
+  }
+}
+
+@media (max-width: 379px) {
+  .chat-bubble-button {
+    bottom: 16px !important;
+    right: 12px !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
+}
+
+/* Chat panel positioning */
+@media (min-width: 768px) {
+  .chat-panel {
+    position: fixed !important;
+    bottom: 88px !important;
+    right: 24px !important;
+    width: 360px !important;
+    height: 500px !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    z-index: 9994 !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    animation: slideUp 0.2s ease forwards !important;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 767px) {
+  .chat-panel {
+    position: fixed !important;
+    bottom: 88px !important;
+    right: 16px !important;
+    width: 320px !important;
+    height: 460px !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    z-index: 9994 !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    animation: slideUp 0.2s ease forwards !important;
+  }
+}
+
+@media (max-width: 639px) {
+  .chat-panel {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    z-index: 9994 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    animation: fadeIn 0.15s ease forwards !important;
+  }
+}
+
+/* Chat internal layout */
+.chat-header {
+  height: 56px !important;
+  min-height: 56px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 16px !important;
+  border-bottom: 1px solid rgba(0,0,0,0.08) !important;
+  flex-shrink: 0 !important;
+}
+
+.chat-close-btn {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+@media (min-width: 768px) {
+  .chat-close-btn {
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+}
+
+.chat-messages {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  scroll-behavior: smooth !important;
+  scrollbar-width: thin !important;
+}
+
+.chat-chips-area {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding: 8px 12px !important;
+  max-height: 80px !important;
+  overflow-y: auto !important;
+  border-top: 1px solid rgba(0,0,0,0.06) !important;
+  flex-shrink: 0 !important;
+}
+
+.chat-chip {
+  font-size: 13px !important;
+  padding: 6px 12px !important;
+  border-radius: 999px !important;
+  white-space: nowrap !important;
+  min-height: 32px !important;
+  cursor: pointer !important;
+}
+
+@media (max-width: 379px) {
+  .chat-chip {
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+  }
+}
+
+.chat-input-area {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 12px !important;
+  border-top: 1px solid rgba(0,0,0,0.08) !important;
+  flex-shrink: 0 !important;
+}
+
+.chat-input {
+  flex: 1 !important;
+  min-height: 40px !important;
+  border-radius: 999px !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  outline: none !important;
+  border: 1px solid rgba(0,0,0,0.15) !important;
+}
 
 @media (max-width: 767px) {
-  .selection-tooltip {
-    font-size: 13px !important;
-    padding: 8px 16px !important;
-    min-height: 44px !important;
-    min-width: 130px !important;
+  .chat-input {
+    font-size: 16px !important;
   }
+}
+
+.chat-send-btn {
+  min-width: 40px !important;
+  min-height: 40px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+}
+
+/* Chat message bubbles */
+.msg-user {
+  align-self: flex-end !important;
+  max-width: 80% !important;
+  padding: 10px 14px !important;
+  border-radius: 18px 18px 4px 18px !important;
+  font-size: clamp(13px, 2vw, 15px) !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+.msg-assistant {
+  align-self: flex-start !important;
+  max-width: 85% !important;
+  padding: 10px 14px !important;
+  border-radius: 18px 18px 18px 4px !important;
+  font-size: clamp(13px, 2vw, 15px) !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+@media (max-width: 379px) {
+  .msg-user, .msg-assistant {
+    max-width: 92% !important;
+    font-size: 13px !important;
+    padding: 8px 12px !important;
+  }
+}
+
+/* Animations */
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px) scale(0.97); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

@@ -57,6 +57,7 @@ export function Assistant({ htmlContent }: AssistantProps) {
   const [speaking, setSpeaking] = useState(false);
   const [voicesReady, setVoicesReady] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const cancelledRef = useRef(false);
 
   // Wait for voices to load — they arrive async in most browsers
@@ -75,6 +76,35 @@ export function Assistant({ htmlContent }: AssistantProps) {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, open]);
+
+  // Handle visual viewport for mobile keyboard
+  useEffect(() => {
+    if (!open) return;
+    const updateViewportHeight = () => {
+      if (panelRef.current && window.visualViewport) {
+        if (window.innerWidth < 640) {
+          panelRef.current.style.height = `${window.visualViewport.height}px`;
+          panelRef.current.style.top = `${window.visualViewport.offsetTop}px`;
+        } else {
+          panelRef.current.style.height = '';
+          panelRef.current.style.top = '';
+        }
+      }
+    };
+    
+    updateViewportHeight();
+    window.visualViewport?.addEventListener('resize', updateViewportHeight);
+    window.visualViewport?.addEventListener('scroll', updateViewportHeight);
+    
+    return () => {
+      window.visualViewport?.removeEventListener('resize', updateViewportHeight);
+      window.visualViewport?.removeEventListener('scroll', updateViewportHeight);
+      if (panelRef.current) {
+        panelRef.current.style.height = '';
+        panelRef.current.style.top = '';
+      }
+    };
+  }, [open]);
 
   const stopSpeaking = () => {
     if (!speechSupported) return;
@@ -201,22 +231,21 @@ export function Assistant({ htmlContent }: AssistantProps) {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? 'Close assistant' : 'Open assistant'}
-        className="fixed bottom-[80px] right-4 md:bottom-6 md:right-6 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 inline-flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="chat-bubble-button bg-primary text-primary-foreground hover:scale-105 active:scale-95 inline-flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-transform"
       >
-        {open ? <X className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
+        {open ? <X className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
       </button>
 
       {open && (
         <div
+          ref={panelRef}
           role="dialog"
           aria-label="AI assistant"
-          className="fixed z-40 bg-card text-card-foreground border border-border shadow-2xl flex flex-col
-                     bottom-0 right-0 left-0 top-0 md:top-auto md:left-auto md:bottom-[104px] md:right-6
-                     md:w-[360px] md:h-[480px] md:rounded-2xl overflow-hidden"
+          className="chat-panel bg-card text-card-foreground border border-border"
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="chat-header">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
+              <Sparkles className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">Assistant</span>
               {speaking && (
                 <span
@@ -232,15 +261,15 @@ export function Assistant({ htmlContent }: AssistantProps) {
             <button
               onClick={() => setOpen(false)}
               aria-label="Close"
-              className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent"
+              className="chat-close-btn hover:bg-accent rounded-md"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+          <div ref={scrollRef} className="chat-messages">
             {messages.length === 0 && (
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground text-center py-4">
                 Hi! I can help you read this document. Try one of these:
               </div>
             )}
@@ -250,18 +279,14 @@ export function Assistant({ htmlContent }: AssistantProps) {
                 className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`max-w-[85%] text-sm rounded-2xl px-3 py-2 whitespace-pre-wrap ${
-                    m.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-br-sm'
-                      : 'bg-secondary text-secondary-foreground rounded-bl-sm'
-                  }`}
+                  className={`${m.role === 'user' ? 'msg-user bg-primary text-primary-foreground' : 'msg-assistant bg-secondary text-secondary-foreground'}`}
                 >
                   {m.text}
                 </div>
                 {m.speakable && (
                   <button
                     onClick={() => speak(m.speakable!)}
-                    className="mt-1 inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded-full border border-border text-foreground hover:bg-accent"
+                    className="mt-2 inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-border text-foreground hover:bg-accent transition-colors"
                   >
                     <Volume2 className="h-4 w-4" /> Read summary
                   </button>
@@ -270,9 +295,9 @@ export function Assistant({ htmlContent }: AssistantProps) {
             ))}
           </div>
 
-          <div className="px-3 pt-2 flex flex-wrap gap-2 border-t border-border">
+          <div className="chat-chips-area">
             <Chip onClick={handleSummarise} icon={<FileText className="h-4 w-4" />}>
-              Summarise document
+              Summarise
             </Chip>
             <Chip onClick={handleReadAloud} icon={<Volume2 className="h-4 w-4" />}>
               Read aloud
@@ -292,19 +317,19 @@ export function Assistant({ htmlContent }: AssistantProps) {
               e.preventDefault();
               handleSend();
             }}
-            className="p-3 flex items-center gap-2"
+            className="chat-input-area bg-card"
           >
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask me anything…"
               aria-label="Message"
-              className="flex-1 h-10 px-3 rounded-lg bg-secondary text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="chat-input bg-secondary text-foreground placeholder:text-muted-foreground"
             />
             <button
               type="submit"
               aria-label="Send"
-              className="h-10 w-10 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90"
+              className="chat-send-btn bg-primary text-primary-foreground hover:opacity-90 transition-opacity flex items-center justify-center"
             >
               <Send className="h-4 w-4" />
             </button>
@@ -330,7 +355,7 @@ function Chip({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border transition-colors ${
+      className={`chat-chip inline-flex items-center gap-1.5 transition-colors border ${
         danger
           ? 'border-destructive text-destructive hover:bg-destructive/10'
           : 'border-border text-foreground hover:bg-accent'
@@ -341,3 +366,4 @@ function Chip({
     </button>
   );
 }
+
