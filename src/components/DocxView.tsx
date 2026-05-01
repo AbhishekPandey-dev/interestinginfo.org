@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
 import { Loader2 } from 'lucide-react';
+import { fixDocxImages } from '../lib/fixDocxImages';
 
 interface DocxViewProps {
   fileUrl: string;
@@ -19,12 +20,19 @@ export function DocxView({ fileUrl, className }: DocxViewProps) {
 
     (async () => {
       try {
-        const res = await fetch(fileUrl, { cache: 'no-cache' });
-        if (!res.ok) throw new Error(`Failed to fetch document (${res.status})`);
-        const buf = await res.arrayBuffer();
+        const response = await fetch(fileUrl, {
+          cache: 'no-cache',
+          mode: 'cors',
+        });
+        if (!response.ok) throw new Error(`Failed to fetch document (${response.status})`);
+        const rawBuffer = await response.arrayBuffer();
         if (cancelled || !containerRef.current) return;
+
+        // Fix unsupported image formats (WDP/JXR) before rendering
+        const fixedBuffer = await fixDocxImages(rawBuffer);
+
         containerRef.current.innerHTML = '';
-        await renderAsync(buf, containerRef.current, undefined, {
+        await renderAsync(fixedBuffer, containerRef.current, undefined, {
           className: 'docx-render',
           inWrapper: false,
           ignoreWidth: false,

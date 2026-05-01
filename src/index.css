@@ -143,7 +143,14 @@
   .docx-container section.docx canvas {
     max-width: 100% !important;
     height: auto !important;
-    display: block !important;
+    display: inline-block !important;
+    object-fit: contain !important;
+  }
+
+  /* Hide truly broken images gracefully — don't show broken icon */
+  .docx-container section.docx img:not([src]),
+  .docx-container section.docx img[src=""] {
+    display: none !important;
   }
 
   /* Tables: horizontally scrollable on small screens */
