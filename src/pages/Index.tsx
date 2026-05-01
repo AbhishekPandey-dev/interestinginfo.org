@@ -6,6 +6,8 @@ import { ReadingModeToggle } from '@/components/ReadingModeToggle';
 import { Assistant, selectBestVoice } from '@/components/Assistant';
 import { DocxView } from '@/components/DocxView';
 import { ZoomControl } from '@/components/ZoomControl';
+import { useLenis } from '@/hooks/useLenis';
+import { DocumentSkeleton } from '@/components/DocumentSkeleton';
 
 function SelectionTooltip() {
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
@@ -190,7 +192,7 @@ interface DocRow {
   file_url: string;
 }
 
-function ZoomedDocView({ zoom, fileUrl }: { zoom: number; fileUrl: string }) {
+function ZoomedDocView({ zoom, fileUrl, onReady }: { zoom: number; fileUrl: string; onReady?: () => void }) {
   const docRef = useRef<HTMLDivElement>(null);
   const [docHeight, setDocHeight] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
@@ -234,15 +236,17 @@ function ZoomedDocView({ zoom, fileUrl }: { zoom: number; fileUrl: string }) {
           left: 0,
         }}
       >
-        <DocxView fileUrl={fileUrl} />
+        <DocxView fileUrl={fileUrl} onReady={onReady} />
       </div>
     </div>
   );
 }
 
 export default function Index() {
+  useLenis();
   const [doc, setDoc] = useState<DocRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoadingDoc, setIsLoadingDoc] = useState(true);
   const [zoom, setZoom] = useState(() => {
     const saved = localStorage.getItem('doc-zoom');
     return saved ? parseFloat(saved) : 1.0;
@@ -261,6 +265,20 @@ export default function Index() {
         .eq('is_published', true)
         .maybeSingle();
       if (!active) return;
+
+      if (data) {
+        const lastUrl = localStorage.getItem('last-doc-url');
+        const currentUrl = data.file_url;
+
+        if (lastUrl && lastUrl !== currentUrl) {
+          // New document was published — clear old cache
+          const cache = await caches.open('docx-cache-v1');
+          await cache.delete(lastUrl);
+          console.log('[Cache] Cleared old document cache');
+        }
+        localStorage.setItem('last-doc-url', currentUrl);
+      }
+
       setDoc(data ?? null);
       setLoading(false);
     })();
@@ -282,7 +300,12 @@ export default function Index() {
           <p className="text-muted-foreground text-base">Nothing here yet.</p>
         </div>
       ) : (
-        <ZoomedDocView zoom={zoom} fileUrl={doc.file_url} />
+        <>
+          {isLoadingDoc && <DocumentSkeleton />}
+          <div style={{ display: isLoadingDoc ? 'none' : 'block', width: '100%' }}>
+            <ZoomedDocView zoom={zoom} fileUrl={doc.file_url} onReady={() => setIsLoadingDoc(false)} />
+          </div>
+        </>
       )}
 
       {doc && <Assistant htmlContent={doc.html_content} />}

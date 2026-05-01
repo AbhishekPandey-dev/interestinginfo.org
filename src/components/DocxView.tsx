@@ -6,9 +6,39 @@ import { fixDocxImages } from '../lib/fixDocxImages';
 interface DocxViewProps {
   fileUrl: string;
   className?: string;
+  onReady?: () => void;
 }
 
-export function DocxView({ fileUrl, className }: DocxViewProps) {
+async function fetchWithCache(url: string): Promise<ArrayBuffer> {
+  const CACHE_NAME = 'docx-cache-v1';
+  const cache = await caches.open(CACHE_NAME);
+  
+  // Check if we have a cached version
+  const cachedResponse = await cache.match(url);
+  if (cachedResponse) {
+    console.log('[Cache] Serving document from cache');
+    return await cachedResponse.arrayBuffer();
+  }
+  
+  // Not in cache — fetch from network
+  console.log('[Cache] Fetching document from network');
+  const response = await fetch(url, {
+    cache: 'no-cache',
+    mode: 'cors',
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch document: ${response.status}`);
+  }
+  
+  // Store in cache for next visit
+  const responseToCache = response.clone();
+  await cache.put(url, responseToCache);
+  
+  return await response.arrayBuffer();
+}
+
+export function DocxView({ fileUrl, className, onReady }: DocxViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,12 +50,7 @@ export function DocxView({ fileUrl, className }: DocxViewProps) {
 
     (async () => {
       try {
-        const response = await fetch(fileUrl, {
-          cache: 'no-cache',
-          mode: 'cors',
-        });
-        if (!response.ok) throw new Error(`Failed to fetch document (${response.status})`);
-        const rawBuffer = await response.arrayBuffer();
+        const rawBuffer = await fetchWithCache(fileUrl);
         if (cancelled || !containerRef.current) return;
 
         // Fix unsupported image formats (WDP/JXR) before rendering
@@ -42,7 +67,10 @@ export function DocxView({ fileUrl, className }: DocxViewProps) {
           renderHeaders: true,
           renderFooters: true,
         });
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          if (onReady) onReady();
+        }
       } catch (e: any) {
         if (!cancelled) {
           setError(e?.message ?? 'Failed to render document');
@@ -54,6 +82,7 @@ export function DocxView({ fileUrl, className }: DocxViewProps) {
     return () => {
       cancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileUrl]);
 
   return (
