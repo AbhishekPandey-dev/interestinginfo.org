@@ -1,149 +1,119 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Minus, Plus, RotateCcw } from 'lucide-react';
 
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 3.0;
+const MIN_ZOOM = 0.7;
+const MAX_ZOOM = 2;
 const STEP = 0.1;
+const DEFAULT_ZOOM = 1;
 
 interface ZoomControlProps {
   zoom: number;
   setZoom: (zoom: number | ((prev: number) => number)) => void;
 }
 
-export function ZoomControl({ zoom, setZoom }: ZoomControlProps) {
-  const [opacity, setOpacity] = useState(1);
-  const hideTimeout = useRef<NodeJS.Timeout>();
+function clampZoom(value: number) {
+  return Number(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value)).toFixed(1));
+}
 
-  const interact = useCallback(() => {
-    setOpacity(1);
+export function ZoomControl({ zoom, setZoom }: ZoomControlProps) {
+  const [idle, setIdle] = useState(false);
+  const hideTimeout = useRef<ReturnType<typeof setTimeout>>();
+
+  const wake = useCallback(() => {
+    setIdle(false);
     if (hideTimeout.current) clearTimeout(hideTimeout.current);
     hideTimeout.current = setTimeout(() => {
-      setOpacity(0.3);
-    }, 3000);
+      setIdle(true);
+    }, 3200);
   }, []);
 
+  const zoomOut = useCallback(() => {
+    setZoom((current) => clampZoom(current - STEP));
+    wake();
+  }, [setZoom, wake]);
+
+  const zoomIn = useCallback(() => {
+    setZoom((current) => clampZoom(current + STEP));
+    wake();
+  }, [setZoom, wake]);
+
+  const resetZoom = useCallback(() => {
+    setZoom(DEFAULT_ZOOM);
+    wake();
+  }, [setZoom, wake]);
+
   useEffect(() => {
-    interact();
+    wake();
     return () => {
       if (hideTimeout.current) clearTimeout(hideTimeout.current);
     };
-  }, [zoom, interact]);
+  }, [zoom, wake]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) {
         return;
       }
-      
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key === '=' || e.key === '+') {
-          e.preventDefault();
-          setZoom(z => Number(Math.min(2.0, z + 0.1).toFixed(1)));
-          interact();
-        } else if (e.key === '-' || e.key === '_') {
-          e.preventDefault();
-          setZoom(z => Number(Math.max(0.7, z - 0.1).toFixed(1)));
-          interact();
-        } else if (e.key === '0') {
-          e.preventDefault();
-          setZoom(1.0);
-          interact();
-        }
+
+      if (!event.ctrlKey && !event.metaKey) return;
+
+      if (event.key === '=' || event.key === '+') {
+        event.preventDefault();
+        zoomIn();
+      } else if (event.key === '-' || event.key === '_') {
+        event.preventDefault();
+        zoomOut();
+      } else if (event.key === '0') {
+        event.preventDefault();
+        resetZoom();
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setZoom, interact]);
-
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const isMobile = windowWidth < 768;
+  }, [resetZoom, zoomIn, zoomOut]);
 
   return (
     <div
-      onMouseEnter={interact}
-      onMouseMove={interact}
-      onTouchStart={interact}
-      style={{
-        position: 'fixed',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        bottom: isMobile ? '80px' : '24px',
-        zIndex: 9990,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        color: 'white',
-        fontSize: isMobile ? '12px' : '14px',
-        fontWeight: 500,
-        borderRadius: '999px',
-        padding: isMobile ? '6px 10px' : '8px 16px',
-        gap: isMobile ? '8px' : '12px',
-        transition: 'opacity 0.3s ease',
-        opacity,
-      }}
+      className={`zoom-control ${idle ? 'zoom-control-idle' : ''}`}
+      onMouseEnter={wake}
+      onMouseMove={wake}
+      onTouchStart={wake}
+      onFocus={wake}
+      aria-label="Document zoom controls"
     >
       <button
-        onClick={() => setZoom(z => Number(Math.max(0.7, z - 0.1).toFixed(1)))}
-        style={{
-          background: 'transparent',
-          color: 'white',
-          border: 'none',
-          cursor: 'pointer',
-          minWidth: isMobile ? '36px' : '28px',
-          minHeight: isMobile ? '36px' : '28px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '18px',
-          transition: 'opacity 0.15s ease',
-        }}
-        onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
-        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        className="zoom-control-button"
+        onClick={zoomOut}
+        disabled={zoom <= MIN_ZOOM}
+        type="button"
+        aria-label="Zoom out"
+        title="Zoom out"
       >
-        −
+        <Minus size={16} />
       </button>
-      <span
-        onDoubleClick={() => setZoom(1.0)}
-        style={{
-          minWidth: isMobile ? '36px' : '44px',
-          textAlign: 'center',
-          cursor: 'default',
-          userSelect: 'none',
-          display: windowWidth < 380 ? 'none' : 'block',
-        }}
-      >
-        {Math.round(zoom * 100)}%
-      </span>
+
       <button
-        onClick={() => setZoom(z => Number(Math.min(2.0, z + 0.1).toFixed(1)))}
-        style={{
-          background: 'transparent',
-          color: 'white',
-          border: 'none',
-          cursor: 'pointer',
-          minWidth: isMobile ? '36px' : '28px',
-          minHeight: isMobile ? '36px' : '28px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '18px',
-          transition: 'opacity 0.15s ease',
-        }}
-        onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
-        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        className="zoom-control-value"
+        onClick={resetZoom}
+        type="button"
+        aria-label="Reset zoom to 100 percent"
+        title="Reset zoom"
       >
-        +
+        <span>{Math.round(zoom * 100)}%</span>
+        {zoom !== DEFAULT_ZOOM && <RotateCcw size={12} aria-hidden="true" />}
+      </button>
+
+      <button
+        className="zoom-control-button"
+        onClick={zoomIn}
+        disabled={zoom >= MAX_ZOOM}
+        type="button"
+        aria-label="Zoom in"
+        title="Zoom in"
+      >
+        <Plus size={16} />
       </button>
     </div>
   );
