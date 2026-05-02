@@ -1,11 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
-import { Sparkles, X, Send, Square, FileText, Volume2, MousePointer2 } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  FileText,
+  MousePointer2,
+  Send,
+  Sparkles,
+  Square,
+  Volume2,
+  X,
+} from 'lucide-react';
 import { extractSummaryBody, htmlToPlainText, summarize } from '@/lib/docUtils';
+import { cn } from '@/lib/utils';
 
 interface Message {
   role: 'user' | 'assistant';
   text: string;
-  speakable?: string; // when set, show a "Read aloud" button under this message
+  speakable?: string;
 }
 
 interface AssistantProps {
@@ -27,81 +36,46 @@ const PREFERRED_VOICE_NAMES = [
 
 export function selectBestVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
   if (!voices.length) return undefined;
+
   for (const name of PREFERRED_VOICE_NAMES) {
-    const v = voices.find(
-      (vv) => vv.name === name && vv.lang?.toLowerCase().startsWith('en'),
+    const voice = voices.find(
+      (candidate) => candidate.name === name && candidate.lang?.toLowerCase().startsWith('en'),
     );
-    if (v) return v;
+    if (voice) return voice;
   }
+
   return (
-    voices.find((v) => v.lang?.startsWith('en-US') && v.name.toLowerCase().includes('male')) ||
-    voices.find((v) => v.lang?.startsWith('en-US') && !v.name.toLowerCase().includes('female') && !v.name.toLowerCase().includes('uk')) ||
-    voices.find((v) => v.lang?.startsWith('en-US')) ||
-    voices.find((v) => v.lang?.toLowerCase().startsWith('en'))
+    voices.find((voice) => voice.lang?.startsWith('en-US') && voice.name.toLowerCase().includes('male')) ||
+    voices.find(
+      (voice) =>
+        voice.lang?.startsWith('en-US') &&
+        !voice.name.toLowerCase().includes('female') &&
+        !voice.name.toLowerCase().includes('uk'),
+    ) ||
+    voices.find((voice) => voice.lang?.startsWith('en-US')) ||
+    voices.find((voice) => voice.lang?.toLowerCase().startsWith('en'))
   );
 }
 
 function chunkText(text: string, wordsPerChunk = 200): string[] {
   const words = text.split(/\s+/).filter(Boolean);
   const chunks: string[] = [];
+
   for (let i = 0; i < words.length; i += wordsPerChunk) {
     chunks.push(words.slice(i, i + wordsPerChunk).join(' '));
   }
+
   return chunks;
 }
 
 function WelcomeCard() {
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      textAlign: 'center',
-      padding: '32px 20px',
-      gap: '12px',
-      flex: 1,
-    }}>
-      <div style={{
-        width: '56px',
-        height: '56px',
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: '8px',
-      }}>
-        <span style={{ fontSize: '24px' }}>✨</span>
+    <div className="assistant-welcome">
+      <div className="assistant-welcome-icon" aria-hidden="true">
+        <Sparkles size={24} />
       </div>
-      
-      <p style={{
-        fontSize: '17px',
-        fontWeight: '600',
-        color: '#111111',
-        margin: 0,
-      }}>
-        Hi, I am your reading assistant
-      </p>
-      
-      <p style={{
-        fontSize: '14px',
-        color: '#666666',
-        margin: 0,
-        lineHeight: '1.5',
-        maxWidth: '240px',
-      }}>
-        I can summarise this document, read it aloud, 
-        or read any text you select on the page.
-      </p>
-      
-      <p style={{
-        fontSize: '12px',
-        color: '#999999',
-        margin: '8px 0 0 0',
-      }}>
-        Try one of the options below ↓
-      </p>
+      <h2>Hi, I am your reading assistant</h2>
+      <p>I can summarise this document, read it aloud, or read selected text from the page.</p>
     </div>
   );
 }
@@ -112,27 +86,46 @@ export function Assistant({ htmlContent }: AssistantProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [speaking, setSpeaking] = useState(false);
   const [voicesReady, setVoicesReady] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
   const cancelledRef = useRef(false);
 
   useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    if (!open) return;
 
-  // Wait for voices to load — they arrive async in most browsers
+    document.documentElement.classList.add('assistant-open');
+
+    const updateViewport = () => {
+      const height = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty('--assistant-viewport-height', `${height}px`);
+    };
+
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    window.visualViewport?.addEventListener('resize', updateViewport);
+    window.visualViewport?.addEventListener('scroll', updateViewport);
+
+    return () => {
+      window.removeEventListener('resize', updateViewport);
+      window.visualViewport?.removeEventListener('resize', updateViewport);
+      window.visualViewport?.removeEventListener('scroll', updateViewport);
+      document.documentElement.style.removeProperty('--assistant-viewport-height');
+      document.documentElement.classList.remove('assistant-open');
+    };
+  }, [open]);
+
   useEffect(() => {
     if (!speechSupported) return;
-    const check = () => {
+
+    const checkVoices = () => {
       if (window.speechSynthesis.getVoices().length > 0) setVoicesReady(true);
     };
-    check();
-    window.speechSynthesis.onvoiceschanged = () => check();
+
+    checkVoices();
+    window.speechSynthesis.onvoiceschanged = checkVoices;
+
     return () => {
       window.speechSynthesis.cancel();
+      window.speechSynthesis.onvoiceschanged = null;
     };
   }, []);
 
@@ -140,58 +133,14 @@ export function Assistant({ htmlContent }: AssistantProps) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, open]);
 
-  // Handle visual viewport for mobile keyboard and breakpoints
-  useEffect(() => {
-    if (!open) return;
-    const updateViewport = () => {
-      if (panelRef.current) {
-        const width = window.innerWidth;
-        const panel = panelRef.current;
-        
-        panel.style.top = '';
-        panel.style.left = '';
-        panel.style.right = '';
-        panel.style.bottom = '';
-        panel.style.width = '';
-        panel.style.height = '';
-        panel.style.borderRadius = '';
+  const pushUser = (text: string) => setMessages((current) => [...current, { role: 'user', text }]);
 
-        if (width < 768) {
-          panel.style.top = '0';
-          panel.style.left = '0';
-          panel.style.right = '0';
-          panel.style.bottom = '0';
-          panel.style.width = '100%';
-          panel.style.height = window.visualViewport ? `${window.visualViewport.height}px` : '100dvh';
-          if (window.visualViewport) {
-            panel.style.top = `${window.visualViewport.offsetTop}px`;
-          }
-          panel.style.borderRadius = '0';
-        } else {
-          // Desktop / Tablet (>= 768px)
-          panel.style.bottom = '100px';
-          panel.style.right = '32px';
-          panel.style.width = '380px';
-          panel.style.height = '600px';
-          panel.style.borderRadius = '16px';
-        }
-      }
-    };
-    
-    updateViewport();
-    window.addEventListener('resize', updateViewport);
-    window.visualViewport?.addEventListener('resize', updateViewport);
-    window.visualViewport?.addEventListener('scroll', updateViewport);
-    
-    return () => {
-      window.removeEventListener('resize', updateViewport);
-      window.visualViewport?.removeEventListener('resize', updateViewport);
-      window.visualViewport?.removeEventListener('scroll', updateViewport);
-    };
-  }, [open]);
+  const pushAssistant = (text: string, speakable?: string) =>
+    setMessages((current) => [...current, { role: 'assistant', text, speakable }]);
 
   const stopSpeaking = () => {
     if (!speechSupported) return;
+
     cancelledRef.current = true;
     window.speechSynthesis.cancel();
     setSpeaking(false);
@@ -202,6 +151,7 @@ export function Assistant({ htmlContent }: AssistantProps) {
       pushAssistant('Sorry, your browser does not support speech.');
       return;
     }
+
     const trimmed = text.trim();
     if (!trimmed) {
       pushAssistant('Nothing to read.');
@@ -209,9 +159,9 @@ export function Assistant({ htmlContent }: AssistantProps) {
     }
 
     if (!voicesReady) {
-      const interval = setInterval(() => {
+      const interval = window.setInterval(() => {
         if (window.speechSynthesis.getVoices().length > 0) {
-          clearInterval(interval);
+          window.clearInterval(interval);
           setVoicesReady(true);
           speak(text);
         }
@@ -222,273 +172,178 @@ export function Assistant({ htmlContent }: AssistantProps) {
     window.speechSynthesis.cancel();
     cancelledRef.current = false;
 
-    const voices = window.speechSynthesis.getVoices();
-    const voice = selectBestVoice(voices);
+    const voice = selectBestVoice(window.speechSynthesis.getVoices());
     const chunks = chunkText(trimmed, 200);
-    let i = 0;
+    let index = 0;
 
     setSpeaking(true);
 
     const speakChunk = () => {
-      if (cancelledRef.current || i >= chunks.length) {
+      if (cancelledRef.current || index >= chunks.length) {
         setSpeaking(false);
         return;
       }
-      const u = new SpeechSynthesisUtterance(chunks[i++]);
-      if (voice) u.voice = voice;
-      u.lang = voice?.lang || 'en-US';
-      u.rate = 0.88;
-      u.pitch = 0.92;
-      u.volume = 1.0;
-      u.onend = () => speakChunk();
-      u.onerror = () => speakChunk();
-      window.speechSynthesis.speak(u);
+
+      const utterance = new SpeechSynthesisUtterance(chunks[index++]);
+      if (voice) utterance.voice = voice;
+      utterance.lang = voice?.lang || 'en-US';
+      utterance.rate = 0.88;
+      utterance.pitch = 0.92;
+      utterance.volume = 1;
+      utterance.onend = speakChunk;
+      utterance.onerror = speakChunk;
+      window.speechSynthesis.speak(utterance);
     };
 
     speakChunk();
   };
 
-  const pushUser = (text: string) => setMessages((m) => [...m, { role: 'user', text }]);
-  const pushAssistant = (text: string, speakable?: string) =>
-    setMessages((m) => [...m, { role: 'assistant', text, speakable }]);
+  const summariseDocument = () => {
+    const summary = summarize(htmlContent);
+    pushAssistant(summary, extractSummaryBody(summary));
+  };
 
   const handleSummarise = () => {
     pushUser('Summarise document');
-    const s = summarize(htmlContent);
-    pushAssistant(s, extractSummaryBody(s));
+    summariseDocument();
   };
 
   const handleReadAloud = () => {
     pushUser('Read aloud');
-    const text = htmlToPlainText(htmlContent);
-    pushAssistant('Reading the document aloud…');
-    speak(text);
+    pushAssistant('Reading the document aloud...');
+    speak(htmlToPlainText(htmlContent));
   };
 
   const handleReadSelection = () => {
-    const sel = window.getSelection()?.toString().trim();
-    if (!sel) {
-      pushAssistant('Highlight some text on the page first, then ask me to read it.');
+    const selectedText = window.getSelection()?.toString().trim();
+
+    if (!selectedText) {
+      pushAssistant('Select some text on the page first, then ask me to read it.');
       return;
     }
-    pushAssistant('Reading the selected text…');
-    speak(sel);
+
+    pushUser('Read selected text');
+    pushAssistant('Reading the selected text...');
+    speak(selectedText);
+  };
+
+  const handleClear = () => {
+    stopSpeaking();
+    setMessages([]);
+    setInput('');
   };
 
   const handleSend = () => {
-    const q = input.trim();
-    if (!q) return;
+    const question = input.trim();
+    if (!question) return;
+
     setInput('');
-    pushUser(q);
-    const lower = q.toLowerCase();
-    if (lower.includes('summar')) {
-      const s = summarize(htmlContent);
-      pushAssistant(s, extractSummaryBody(s));
+    pushUser(question);
+
+    const lower = question.toLowerCase();
+    const selectedText = window.getSelection()?.toString().trim();
+
+    if (lower.includes('stop')) {
+      stopSpeaking();
+      pushAssistant('Stopped.');
+    } else if (lower.includes('clear') || lower.includes('reset')) {
+      handleClear();
+    } else if (lower.includes('summar')) {
+      summariseDocument();
     } else if (
-      lower.includes('read this') || 
-      lower.includes('read selection') || 
-      lower.includes('read selected') || 
+      lower.includes('read selection') ||
+      lower.includes('read selected') ||
+      lower.includes('read this') ||
       lower.includes('read what i selected')
     ) {
-      const sel = window.getSelection()?.toString().trim();
-      if (sel) {
-        handleReadSelection();
+      if (selectedText) {
+        pushAssistant('Reading the selected text...');
+        speak(selectedText);
       } else {
         pushAssistant('Please select some text on the page first, then I can read it for you.');
       }
-    } else if (lower.includes('stop')) {
-      stopSpeaking();
-      pushAssistant('Stopped.');
     } else if (lower.includes('read')) {
-      const text = htmlToPlainText(htmlContent);
-      pushAssistant('Reading the document aloud…');
-      speak(text);
+      pushAssistant('Reading the document aloud...');
+      speak(htmlToPlainText(htmlContent));
     } else {
       pushAssistant(
-        'I can summarise this document or read it aloud for you. Try asking me to summarise or select text and ask me to read it.',
+        'I can summarise this document, read it aloud, or read selected text. Try "summarise", "read aloud", or select text and ask me to read it.',
       );
     }
   };
 
   return (
     <>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-label={open ? 'Close assistant' : 'Open assistant'}
-        style={{
-          position: 'fixed',
-          bottom: windowWidth < 768 ? '80px' : '32px',
-          right: windowWidth < 768 ? '20px' : '32px',
-          width: windowWidth < 768 ? '56px' : '52px',
-          height: windowWidth < 768 ? '56px' : '52px',
-          borderRadius: '50%',
-          zIndex: 9995,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          border: 'none',
-          background: 'hsl(var(--primary))',
-          color: 'hsl(var(--primary-foreground))',
-          transition: 'transform 0.15s ease',
-        }}
-        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1.0)'}
-        onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
-        onMouseUp={e => e.currentTarget.style.transform = 'scale(1.05)'}
-      >
-        {open ? <X size={24} /> : <Sparkles size={24} />}
-      </button>
+      {!open && (
+        <button
+          className="assistant-launcher"
+          onClick={() => setOpen(true)}
+          aria-label="Open reading assistant"
+          type="button"
+        >
+          <Sparkles size={22} />
+        </button>
+      )}
 
       {open && (
-        <div
-          ref={panelRef}
-          role="dialog"
-          aria-label="AI assistant"
-          style={{
-            position: 'fixed',
-            display: 'flex',
-            flexDirection: 'column',
-            background: '#ffffff',
-            overflow: 'hidden',
-            zIndex: 9994,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.18)'
-          }}
-        >
-          <header style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 16px',
-            height: '56px',
-            minHeight: '56px',
-            borderBottom: '1px solid rgba(0,0,0,0.06)',
-            flexShrink: 0,
-            background: 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-            }}>
-              <div style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <span style={{ fontSize: '14px' }}>✨</span>
-              </div>
-              <span style={{
-                fontSize: '15px',
-                fontWeight: '600',
-                color: '#111111',
-              }}>
-                Reading Assistant
+        <div className="assistant-shell" role="dialog" aria-modal="false" aria-label="Reading assistant">
+          <header className="assistant-header">
+            <div className="assistant-title-wrap">
+              <span className="assistant-title-icon" aria-hidden="true">
+                <Sparkles size={16} />
               </span>
-              {speaking && (
-                <span
-                  aria-label="Speaking"
-                  style={{
-                    marginLeft: '4px',
-                    display: 'inline-flex',
-                    alignItems: 'baseline',
-                    gap: '2px',
-                    height: '12px'
-                  }}
-                >
-                  <span className="animate-pulse-bar-1" style={{ width: '2px', height: '100%', background: 'hsl(var(--primary))' }} />
-                  <span className="animate-pulse-bar-2" style={{ width: '2px', height: '100%', background: 'hsl(var(--primary))' }} />
-                  <span className="animate-pulse-bar-3" style={{ width: '2px', height: '100%', background: 'hsl(var(--primary))' }} />
-                </span>
-              )}
+              <div>
+                <p className="assistant-title">Reading Assistant</p>
+                {speaking && (
+                  <span className="assistant-speaking-label">
+                    Speaking
+                    <span className="assistant-speaking-bars" aria-hidden="true">
+                      <span className="animate-pulse-bar-1" />
+                      <span className="animate-pulse-bar-2" />
+                      <span className="animate-pulse-bar-3" />
+                    </span>
+                  </span>
+                )}
+              </div>
             </div>
-            
-            <button
-              onClick={() => setOpen(false)}
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                border: 'none',
-                background: 'rgba(0,0,0,0.06)',
-                color: '#555555',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                transition: 'background 0.15s ease',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.12)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.06)'}
-              aria-label="Close"
-            >
-              <X size={16} />
-            </button>
+
+            <div className="assistant-header-actions">
+              {messages.length > 0 && (
+                <button className="assistant-ghost-button" onClick={handleClear} type="button">
+                  Clear
+                </button>
+              )}
+              <button
+                className="assistant-icon-button"
+                onClick={() => setOpen(false)}
+                aria-label="Close reading assistant"
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </div>
           </header>
 
-          <div ref={scrollRef} style={{ 
-            flex: 1, 
-            minHeight: 0,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            padding: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-            scrollBehavior: 'smooth'
-          }}>
-            {messages.length === 0 ? <WelcomeCard /> : (
-              messages.map((m, i) => (
+          <div ref={scrollRef} className="assistant-messages" aria-live="polite">
+            {messages.length === 0 ? (
+              <WelcomeCard />
+            ) : (
+              messages.map((message, index) => (
                 <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: m.role === 'user' ? 'flex-end' : 'flex-start'
-                  }}
+                  key={`${message.role}-${index}`}
+                  className={cn('assistant-message-row', message.role === 'user' && 'assistant-message-row-user')}
                 >
-                  <div
-                    style={{
-                      maxWidth: '85%',
-                      padding: '10px 14px',
-                      borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                      fontSize: 'clamp(13px, 2vw, 15px)',
-                      wordBreak: 'break-word',
-                      overflowWrap: 'break-word',
-                      background: m.role === 'user' ? 'hsl(var(--primary))' : 'hsl(var(--secondary))',
-                      color: m.role === 'user' ? 'hsl(var(--primary-foreground))' : 'hsl(var(--secondary-foreground))'
-                    }}
-                  >
-                    {m.text}
+                  <div className={cn('assistant-message', `assistant-message-${message.role}`)}>
+                    {message.text}
                   </div>
-                  {m.speakable && (
+                  {message.speakable && (
                     <button
-                      onClick={() => speak(m.speakable!)}
-                      style={{
-                        marginTop: '8px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontSize: '14px',
-                        padding: '6px 12px',
-                        borderRadius: '999px',
-                        border: '1px solid hsl(var(--border))',
-                        color: 'hsl(var(--foreground))',
-                        background: 'transparent',
-                        cursor: 'pointer'
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--accent))'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      className="assistant-read-summary"
+                      onClick={() => speak(message.speakable!)}
+                      type="button"
                     >
-                      <Volume2 size={16} /> Read summary
+                      <Volume2 size={15} />
+                      Read summary
                     </button>
                   )}
                 </div>
@@ -496,88 +351,39 @@ export function Assistant({ htmlContent }: AssistantProps) {
             )}
           </div>
 
-          <div style={{ 
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '8px',
-            padding: '10px 14px',
-            borderTop: '1px solid rgba(0,0,0,0.06)',
-            flexShrink: 0 
-          }}>
-            <Chip onClick={handleSummarise} icon={<FileText size={16} />}>
+          <div className="assistant-actions" aria-label="Assistant actions">
+            <ActionChip onClick={handleSummarise} icon={<FileText size={15} />}>
               Summarise
-            </Chip>
-            <Chip onClick={handleReadAloud} icon={<Volume2 size={16} />}>
+            </ActionChip>
+            <ActionChip onClick={handleReadAloud} icon={<Volume2 size={15} />}>
               Read aloud
-            </Chip>
-            <Chip onClick={handleReadSelection} icon={<MousePointer2 size={16} />}>
-              Read selection
-            </Chip>
+            </ActionChip>
+            <ActionChip onClick={handleReadSelection} icon={<MousePointer2 size={15} />}>
+              Selection
+            </ActionChip>
             {speaking && (
-              <Chip onClick={stopSpeaking} icon={<Square size={16} />} danger>
+              <ActionChip onClick={stopSpeaking} icon={<Square size={15} />} danger>
                 Stop
-              </Chip>
+              </ActionChip>
             )}
           </div>
 
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
+            className="assistant-composer"
+            onSubmit={(event) => {
+              event.preventDefault();
               handleSend();
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 14px',
-              borderTop: '1px solid rgba(0,0,0,0.08)',
-              flexShrink: 0,
-              background: '#ffffff',
             }}
           >
             <input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask me anything…"
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="Ask me anything..."
               aria-label="Message"
-              style={{
-                flex: 1,
-                height: '40px',
-                borderRadius: '999px',
-                border: '1px solid rgba(0,0,0,0.15)',
-                padding: '0 16px',
-                fontSize: '16px',
-                outline: 'none',
-                background: '#f9f9f9',
-                color: '#111111',
-              }}
-              onFocus={e => {
-                e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.6)';
-                e.currentTarget.style.background = '#ffffff';
-              }}
-              onBlur={e => {
-                e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)';
-                e.currentTarget.style.background = '#f9f9f9';
-              }}
+              autoComplete="off"
             />
-            <button
-              type="submit"
-              aria-label="Send"
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                border: 'none',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Send size={16} />
+            <button type="submit" aria-label="Send message" disabled={!input.trim()}>
+              <Send size={17} />
             </button>
           </form>
         </div>
@@ -586,45 +392,25 @@ export function Assistant({ htmlContent }: AssistantProps) {
   );
 }
 
-function Chip({
+function ActionChip({
   onClick,
   children,
   icon,
   danger,
 }: {
   onClick: () => void;
-  children: React.ReactNode;
-  icon?: React.ReactNode;
+  children: ReactNode;
+  icon: ReactNode;
   danger?: boolean;
 }) {
-  const [hover, setHover] = useState(false);
-  
   return (
     <button
       type="button"
       onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        padding: '8px 14px',
-        borderRadius: '999px',
-        fontSize: '13px',
-        fontWeight: 500,
-        minHeight: '36px',
-        cursor: 'pointer',
-        border: `1px solid ${hover ? 'rgba(0,0,0,0.20)' : 'rgba(0,0,0,0.12)'}`,
-        background: danger ? '#fee2e2' : hover ? '#f5f5f5' : '#ffffff',
-        color: danger ? '#ef4444' : '#333333',
-        whiteSpace: 'nowrap',
-        transition: 'all 0.15s ease',
-      }}
+      className={cn('assistant-action-chip', danger && 'assistant-action-chip-danger')}
     >
       {icon}
-      {children}
+      <span>{children}</span>
     </button>
   );
 }
-
