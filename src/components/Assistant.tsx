@@ -50,15 +50,78 @@ function chunkText(text: string, wordsPerChunk = 200): string[] {
   return chunks;
 }
 
+function WelcomeCard() {
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      textAlign: 'center',
+      padding: '32px 20px',
+      gap: '12px',
+      flex: 1,
+    }}>
+      <div style={{
+        width: '56px',
+        height: '56px',
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '8px',
+      }}>
+        <span style={{ fontSize: '24px' }}>✨</span>
+      </div>
+      
+      <p style={{
+        fontSize: '17px',
+        fontWeight: '600',
+        color: '#111111',
+        margin: 0,
+      }}>
+        Hi, I am your reading assistant
+      </p>
+      
+      <p style={{
+        fontSize: '14px',
+        color: '#666666',
+        margin: 0,
+        lineHeight: '1.5',
+        maxWidth: '240px',
+      }}>
+        I can summarise this document, read it aloud, 
+        or read any text you select on the page.
+      </p>
+      
+      <p style={{
+        fontSize: '12px',
+        color: '#999999',
+        margin: '8px 0 0 0',
+      }}>
+        Try one of the options below ↓
+      </p>
+    </div>
+  );
+}
+
 export function Assistant({ htmlContent }: AssistantProps) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [speaking, setSpeaking] = useState(false);
   const [voicesReady, setVoicesReady] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
   const scrollRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const cancelledRef = useRef(false);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Wait for voices to load — they arrive async in most browsers
   useEffect(() => {
@@ -77,32 +140,53 @@ export function Assistant({ htmlContent }: AssistantProps) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, open]);
 
-  // Handle visual viewport for mobile keyboard
+  // Handle visual viewport for mobile keyboard and breakpoints
   useEffect(() => {
     if (!open) return;
-    const updateViewportHeight = () => {
-      if (panelRef.current && window.visualViewport) {
-        if (window.innerWidth < 640) {
-          panelRef.current.style.height = `${window.visualViewport.height}px`;
-          panelRef.current.style.top = `${window.visualViewport.offsetTop}px`;
+    const updateViewport = () => {
+      if (panelRef.current) {
+        const width = window.innerWidth;
+        const panel = panelRef.current;
+        
+        panel.style.top = '';
+        panel.style.left = '';
+        panel.style.right = '';
+        panel.style.bottom = '';
+        panel.style.width = '';
+        panel.style.height = '';
+        panel.style.borderRadius = '';
+
+        if (width < 768) {
+          panel.style.top = '0';
+          panel.style.left = '0';
+          panel.style.right = '0';
+          panel.style.bottom = '0';
+          panel.style.width = '100%';
+          panel.style.height = window.visualViewport ? `${window.visualViewport.height}px` : '100dvh';
+          if (window.visualViewport) {
+            panel.style.top = `${window.visualViewport.offsetTop}px`;
+          }
+          panel.style.borderRadius = '0';
         } else {
-          panelRef.current.style.height = '';
-          panelRef.current.style.top = '';
+          // Desktop / Tablet (>= 768px)
+          panel.style.bottom = '100px';
+          panel.style.right = '32px';
+          panel.style.width = '380px';
+          panel.style.height = '600px';
+          panel.style.borderRadius = '16px';
         }
       }
     };
     
-    updateViewportHeight();
-    window.visualViewport?.addEventListener('resize', updateViewportHeight);
-    window.visualViewport?.addEventListener('scroll', updateViewportHeight);
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    window.visualViewport?.addEventListener('resize', updateViewport);
+    window.visualViewport?.addEventListener('scroll', updateViewport);
     
     return () => {
-      window.visualViewport?.removeEventListener('resize', updateViewportHeight);
-      window.visualViewport?.removeEventListener('scroll', updateViewportHeight);
-      if (panelRef.current) {
-        panelRef.current.style.height = '';
-        panelRef.current.style.top = '';
-      }
+      window.removeEventListener('resize', updateViewport);
+      window.visualViewport?.removeEventListener('resize', updateViewport);
+      window.visualViewport?.removeEventListener('scroll', updateViewport);
     };
   }, [open]);
 
@@ -231,9 +315,30 @@ export function Assistant({ htmlContent }: AssistantProps) {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? 'Close assistant' : 'Open assistant'}
-        className="chat-bubble-button bg-primary text-primary-foreground hover:scale-105 active:scale-95 inline-flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-transform"
+        style={{
+          position: 'fixed',
+          bottom: windowWidth < 768 ? '80px' : '32px',
+          right: windowWidth < 768 ? '20px' : '32px',
+          width: windowWidth < 768 ? '56px' : '52px',
+          height: windowWidth < 768 ? '56px' : '52px',
+          borderRadius: '50%',
+          zIndex: 9995,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          border: 'none',
+          background: 'hsl(var(--primary))',
+          color: 'hsl(var(--primary-foreground))',
+          transition: 'transform 0.15s ease',
+        }}
+        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1.0)'}
+        onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+        onMouseUp={e => e.currentTarget.style.transform = 'scale(1.05)'}
       >
-        {open ? <X className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
+        {open ? <X size={24} /> : <Sparkles size={24} />}
       </button>
 
       {open && (
@@ -241,72 +346,175 @@ export function Assistant({ htmlContent }: AssistantProps) {
           ref={panelRef}
           role="dialog"
           aria-label="AI assistant"
-          className="chat-panel bg-card text-card-foreground border border-border"
+          style={{
+            position: 'fixed',
+            display: 'flex',
+            flexDirection: 'column',
+            background: '#ffffff',
+            overflow: 'hidden',
+            zIndex: 9994,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.18)'
+          }}
         >
-          <div className="chat-header">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Assistant</span>
+          <header style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 16px',
+            height: '56px',
+            minHeight: '56px',
+            borderBottom: '1px solid rgba(0,0,0,0.06)',
+            flexShrink: 0,
+            background: 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}>
+              <div style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: '14px' }}>✨</span>
+              </div>
+              <span style={{
+                fontSize: '15px',
+                fontWeight: '600',
+                color: '#111111',
+              }}>
+                Reading Assistant
+              </span>
               {speaking && (
                 <span
                   aria-label="Speaking"
-                  className="ml-1 inline-flex items-end gap-0.5 h-3"
+                  style={{
+                    marginLeft: '4px',
+                    display: 'inline-flex',
+                    alignItems: 'baseline',
+                    gap: '2px',
+                    height: '12px'
+                  }}
                 >
-                  <span className="w-0.5 bg-primary animate-pulse-bar-1" />
-                  <span className="w-0.5 bg-primary animate-pulse-bar-2" />
-                  <span className="w-0.5 bg-primary animate-pulse-bar-3" />
+                  <span className="animate-pulse-bar-1" style={{ width: '2px', height: '100%', background: 'hsl(var(--primary))' }} />
+                  <span className="animate-pulse-bar-2" style={{ width: '2px', height: '100%', background: 'hsl(var(--primary))' }} />
+                  <span className="animate-pulse-bar-3" style={{ width: '2px', height: '100%', background: 'hsl(var(--primary))' }} />
                 </span>
               )}
             </div>
+            
             <button
               onClick={() => setOpen(false)}
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: 'none',
+                background: 'rgba(0,0,0,0.06)',
+                color: '#555555',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.12)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.06)'}
               aria-label="Close"
-              className="chat-close-btn hover:bg-accent rounded-md"
             >
-              <X className="h-5 w-5" />
+              <X size={16} />
             </button>
-          </div>
+          </header>
 
-          <div ref={scrollRef} className="chat-messages">
-            {messages.length === 0 && (
-              <div className="text-sm text-muted-foreground text-center py-4">
-                Hi! I can help you read this document. Try one of these:
-              </div>
-            )}
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}
-              >
+          <div ref={scrollRef} style={{ 
+            flex: 1, 
+            minHeight: 0,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            scrollBehavior: 'smooth'
+          }}>
+            {messages.length === 0 ? <WelcomeCard /> : (
+              messages.map((m, i) => (
                 <div
-                  className={`${m.role === 'user' ? 'msg-user bg-primary text-primary-foreground' : 'msg-assistant bg-secondary text-secondary-foreground'}`}
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: m.role === 'user' ? 'flex-end' : 'flex-start'
+                  }}
                 >
-                  {m.text}
-                </div>
-                {m.speakable && (
-                  <button
-                    onClick={() => speak(m.speakable!)}
-                    className="mt-2 inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-border text-foreground hover:bg-accent transition-colors"
+                  <div
+                    style={{
+                      maxWidth: '85%',
+                      padding: '10px 14px',
+                      borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                      fontSize: 'clamp(13px, 2vw, 15px)',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                      background: m.role === 'user' ? 'hsl(var(--primary))' : 'hsl(var(--secondary))',
+                      color: m.role === 'user' ? 'hsl(var(--primary-foreground))' : 'hsl(var(--secondary-foreground))'
+                    }}
                   >
-                    <Volume2 className="h-4 w-4" /> Read summary
-                  </button>
-                )}
-              </div>
-            ))}
+                    {m.text}
+                  </div>
+                  {m.speakable && (
+                    <button
+                      onClick={() => speak(m.speakable!)}
+                      style={{
+                        marginTop: '8px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '14px',
+                        padding: '6px 12px',
+                        borderRadius: '999px',
+                        border: '1px solid hsl(var(--border))',
+                        color: 'hsl(var(--foreground))',
+                        background: 'transparent',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--accent))'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <Volume2 size={16} /> Read summary
+                    </button>
+                  )}
+                </div>
+              ))
+            )}
           </div>
 
-          <div className="chat-chips-area">
-            <Chip onClick={handleSummarise} icon={<FileText className="h-4 w-4" />}>
+          <div style={{ 
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '8px',
+            padding: '10px 14px',
+            borderTop: '1px solid rgba(0,0,0,0.06)',
+            flexShrink: 0 
+          }}>
+            <Chip onClick={handleSummarise} icon={<FileText size={16} />}>
               Summarise
             </Chip>
-            <Chip onClick={handleReadAloud} icon={<Volume2 className="h-4 w-4" />}>
+            <Chip onClick={handleReadAloud} icon={<Volume2 size={16} />}>
               Read aloud
             </Chip>
-            <Chip onClick={handleReadSelection} icon={<MousePointer2 className="h-4 w-4" />}>
+            <Chip onClick={handleReadSelection} icon={<MousePointer2 size={16} />}>
               Read selection
             </Chip>
             {speaking && (
-              <Chip onClick={stopSpeaking} icon={<Square className="h-4 w-4" />} danger>
+              <Chip onClick={stopSpeaking} icon={<Square size={16} />} danger>
                 Stop
               </Chip>
             )}
@@ -317,21 +525,59 @@ export function Assistant({ htmlContent }: AssistantProps) {
               e.preventDefault();
               handleSend();
             }}
-            className="chat-input-area bg-card"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 14px',
+              borderTop: '1px solid rgba(0,0,0,0.08)',
+              flexShrink: 0,
+              background: '#ffffff',
+            }}
           >
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask me anything…"
               aria-label="Message"
-              className="chat-input bg-secondary text-foreground placeholder:text-muted-foreground"
+              style={{
+                flex: 1,
+                height: '40px',
+                borderRadius: '999px',
+                border: '1px solid rgba(0,0,0,0.15)',
+                padding: '0 16px',
+                fontSize: '16px',
+                outline: 'none',
+                background: '#f9f9f9',
+                color: '#111111',
+              }}
+              onFocus={e => {
+                e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.6)';
+                e.currentTarget.style.background = '#ffffff';
+              }}
+              onBlur={e => {
+                e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)';
+                e.currentTarget.style.background = '#f9f9f9';
+              }}
             />
             <button
               type="submit"
               aria-label="Send"
-              className="chat-send-btn bg-primary text-primary-foreground hover:opacity-90 transition-opacity flex items-center justify-center"
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                border: 'none',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
             >
-              <Send className="h-4 w-4" />
+              <Send size={16} />
             </button>
           </form>
         </div>
@@ -351,15 +597,30 @@ function Chip({
   icon?: React.ReactNode;
   danger?: boolean;
 }) {
+  const [hover, setHover] = useState(false);
+  
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`chat-chip inline-flex items-center gap-1.5 transition-colors border ${
-        danger
-          ? 'border-destructive text-destructive hover:bg-destructive/10'
-          : 'border-border text-foreground hover:bg-accent'
-      }`}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '8px 14px',
+        borderRadius: '999px',
+        fontSize: '13px',
+        fontWeight: 500,
+        minHeight: '36px',
+        cursor: 'pointer',
+        border: `1px solid ${hover ? 'rgba(0,0,0,0.20)' : 'rgba(0,0,0,0.12)'}`,
+        background: danger ? '#fee2e2' : hover ? '#f5f5f5' : '#ffffff',
+        color: danger ? '#ef4444' : '#333333',
+        whiteSpace: 'nowrap',
+        transition: 'all 0.15s ease',
+      }}
     >
       {icon}
       {children}
