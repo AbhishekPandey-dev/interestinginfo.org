@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Volume2, Play, Pause, Square, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { ReadingModeToggle } from '@/components/ReadingModeToggle';
-import { Assistant, selectBestVoice } from '@/components/Assistant';
+import { Assistant, applyNaturalSpeechProfile, selectSelectionTooltipVoice } from '@/components/Assistant';
 import { DocxView } from '@/components/DocxView';
 import { ZoomControl } from '@/components/ZoomControl';
 import { useLenis } from '@/hooks/useLenis';
@@ -64,14 +64,10 @@ function SelectionTooltip() {
     
     // Attempt to wake up voices if they haven't loaded yet
     const voices = window.speechSynthesis.getVoices();
-    const voice = selectBestVoice(voices);
+    const voice = selectSelectionTooltipVoice(voices);
     
     const u = new SpeechSynthesisUtterance(tooltip.text);
-    if (voice) u.voice = voice;
-    u.lang = voice?.lang || 'en-US';
-    u.rate = 0.88;
-    u.pitch = 0.92;
-    u.volume = 1.0;
+    applyNaturalSpeechProfile(u, voice);
     
     u.onstart = () => setSpeechState('playing');
     u.onpause = () => setSpeechState('paused');

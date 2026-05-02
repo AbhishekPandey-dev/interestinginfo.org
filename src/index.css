@@ -351,6 +351,57 @@
     background: #f1f1f1;
   }
 
+  .assistant-voice-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+    background: #ffffff;
+    flex-shrink: 0;
+  }
+
+  .assistant-voice-row label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #555555;
+  }
+
+  .assistant-voice-row select {
+    min-width: 0;
+    height: 34px;
+    padding: 0 28px 0 10px;
+    border: 1px solid rgba(17, 17, 17, 0.12);
+    border-radius: 999px;
+    background: #f8f8f8;
+    color: #171717;
+    font-size: 12px;
+    font-weight: 600;
+    outline: none;
+  }
+
+  .assistant-voice-row select:focus {
+    border-color: rgba(17, 17, 17, 0.36);
+    box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.06);
+  }
+
+  .assistant-voice-row button {
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid rgba(17, 17, 17, 0.1);
+    border-radius: 999px;
+    background: #111111;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .assistant-voice-row button:hover {
+    background: #2a2a2a;
+  }
+
   .assistant-messages {
     flex: 1;
     min-height: 0;
@@ -575,6 +626,15 @@
   .assistant-header {
     min-height: 54px;
     padding: max(8px, env(safe-area-inset-top)) 10px 8px 12px;
+  }
+
+  .assistant-voice-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 8px 10px;
+  }
+
+  .assistant-voice-row label {
+    display: none;
   }
 
   .assistant-messages {
