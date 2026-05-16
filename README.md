@@ -26,40 +26,6 @@ A modern, high-fidelity web application tailored to effortlessly deliver and int
 
 You need Node.js (v18+ recommended) and `npm` installed. You will also need a Supabase project created for your backend services.
 
-### Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yourusername/document-whisperer.git
-   cd document-whisperer
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment Variables:**
-   Create a `.env` file in the root of your project and configure your Supabase variables.
-   *(Note: For security, `.env` files are ignored by git).*
-   ```env
-   VITE_SUPABASE_URL=your_supabase_project_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
-
-4. **Run the Development Server:**
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:8080](http://localhost:8080) to view it in the browser.
-
-### Building for Production
-
-To create an optimized production build:
-```bash
-npm run build
-```
-
 ## 🔒 Security & Admin
 
 The admin page `/admin` uses Supabase Auth to ensure only authorized administrators can upload and publish new texts. Ensure row-level security (RLS) is appropriately matched on your `published_document` Supabase table and `documents` storage bucket!
